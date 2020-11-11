@@ -1,8 +1,10 @@
+from calendar import calendar
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox as ms
 import sqlite3
 from Login import login
+from tkcalendar import *
 
 class Cuidador():
     database = 'database.db'
@@ -96,6 +98,8 @@ class Cliente():
         self.window.title('Nanny')
         self.n_kids = StringVar()
         self.n_kids.set('1')
+        self.dia = StringVar()
+        self.dia.set('')
         self.care = StringVar()
         self.care.set('No')
         self.nombre = nombre 
@@ -106,8 +110,7 @@ class Cliente():
         frame.grid(row=0, column=0, sticky=NSEW, columnspan=2)
 
         Label(frame, text = 'Dia: ').grid(row = 1, column = 0)
-        self.dia = Entry(frame)
-        self.dia.grid(row = 1, column = 1)
+        ttk.Button(frame, text = "Set Date", command=self.calendar).grid(row = 1, column = 1)
 
         Label(frame, text = 'Cantidad de infantes: ').grid(row = 2, column = 0)
         self.kids = OptionMenu(frame, self.n_kids, '1', '2', '3')
@@ -135,6 +138,14 @@ class Cliente():
             conn.commit()
         return result
     
+    def calendar(self):
+        cal_page = Toplevel()
+        frame = Frame(cal_page)
+        frame.grid(row=0, columnspan=2)
+        cal = Calendar(frame, selectmode = 'day', year = 2020, month = 11, textvariable = self.dia)
+        cal.grid()
+        ttk.Button(frame, text='SET', command = cal_page.withdraw).grid()
+
     def add_order(self):
         if self.validation():
             query = 'INSERT INTO ordenes VALUES(?,?,?,?,?,?,NULL,?,?,NULL,NULL,?)'
@@ -142,11 +153,13 @@ class Cliente():
             parameters = (self.nombre, self.dia.get(), self.n_kids.get(), self.in_time.get(), self.end_time.get(), self.care.get(), self.numero, 'No', codigo)
             self.run_query(query, parameters)
             ms.showinfo("Codigo", f"Codigo: {codigo}\nNo pierda este codigo! Lo necesitara para checar su orden.")
-            self.dia.delete(0, END)
+            self.dia.set('')
             self.in_time.delete(0, END)
             self.end_time.delete(0, END)
             self.n_kids.set('1')
             self.care.set('No')
+        else:
+            ms.showerror("Error!", "Oops! Faltan elementos por seleccionar")
             
     def check(self):
         check_page = Toplevel()
@@ -158,7 +171,7 @@ class Cliente():
         code = Entry(frame)
         code.grid(row = 1, column = 1)
 
-        ttk.Button(frame, text = "CHECK", command=lambda: self.check_code(code)).grid(row=2, columnspan=2)
+        ttk.Button(frame, text = "CHECK", command=lambda: [self.check_code(code),check_page.withdraw()]).grid(row=2, columnspan=2)
 
     def check_code(self, code):
         if len(code.get()) != 0:
